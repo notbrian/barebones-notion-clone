@@ -186,6 +186,16 @@ function reducer(state: TextNode[], action: padAction) {
   }
 }
 
+const setCaretToEnd = (element: HTMLElement) => {
+  const range = document.createRange();
+  const selection = window.getSelection() as Selection;
+  range.selectNodeContents(element);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  element.focus();
+};
+
 function App() {
   const [padState, dispatch] = useReducer(reducer, defaultState);
   const [nextFocus, setFocus] = useState<string | null>(null);
@@ -196,9 +206,12 @@ function App() {
 
   useEffect(() => {
     if (nextFocus) {
-      document.getElementById(nextFocus)?.focus();
+      const focus = document.getElementById(nextFocus);
+      if (focus !== null) {
+        setCaretToEnd(focus);
+      }
     }
-  }, [nextFocus]);
+  });
 
   return (
     <div className="App">
@@ -248,6 +261,7 @@ const TextBlock = ({
 
     if (e.shiftKey && e.key === "Tab") {
       dispatch({ type: "unindent", id: id });
+      setFocus(id);
       return;
     }
 
