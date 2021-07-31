@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import "./App.css";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import { v4 as uuidv4 } from "uuid";
@@ -167,16 +167,30 @@ function reducer(state: TextNode[], action: padAction) {
 
 function App() {
   const [padState, dispatch] = useReducer(reducer, defaultState);
+  const [nextFocus, setFocus] = useState<string | null>(null);
 
   useEffect(() => {
     console.log(padState);
   }, [padState]);
 
+  useEffect(() => {
+    if (nextFocus) {
+      document.getElementById(nextFocus)?.focus();
+    }
+  }, [nextFocus]);
+
   return (
     <div className="App">
       <div id="pad">
         {padState.map((node) => {
-          return <TextBlock data={node} key={node.id} dispatch={dispatch} />;
+          return (
+            <TextBlock
+              data={node}
+              key={node.id}
+              dispatch={dispatch}
+              setFocus={setFocus}
+            />
+          );
         })}
       </div>
     </div>
@@ -186,9 +200,11 @@ function App() {
 const TextBlock = ({
   data,
   dispatch,
+  setFocus,
 }: {
   data: TextNode;
   dispatch: React.Dispatch<padAction>;
+  setFocus: (id: string) => void;
 }) => {
   const { children, text, id } = data;
 
@@ -203,7 +219,9 @@ const TextBlock = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      dispatch({ type: "addblock", id: id, newID: uuidv4() });
+      const newID = uuidv4();
+      dispatch({ type: "addblock", id: id, newID });
+      setFocus(newID);
       return;
     }
 
@@ -216,7 +234,14 @@ const TextBlock = ({
 
   const ResolveChildren = () => {
     return children.map((node) => {
-      return <TextBlock data={node} key={node.id} dispatch={dispatch} />;
+      return (
+        <TextBlock
+          data={node}
+          key={node.id}
+          dispatch={dispatch}
+          setFocus={setFocus}
+        />
+      );
     });
   };
 
