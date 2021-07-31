@@ -96,7 +96,7 @@ function reducer(state: TextNode[], action: padAction) {
       const node = findById(newState, action.id);
       // If nested
       if (node !== undefined && node.parent) {
-        const parent = findById(newState, node.parent);
+        const parent = findById(newState, node.parent) as TextNode;
         parent?.children.push({
           text: "New Text",
           children: [],
@@ -121,8 +121,7 @@ function reducer(state: TextNode[], action: padAction) {
       if (!node) return state;
       // If nested
       if (node.parent) {
-        const parent = findById(newState, node.parent);
-        if (!parent) return state;
+        const parent = findById(newState, node.parent) as TextNode;
         const index = parent.children.findIndex((child) => child === node);
         const newParent = parent.children[index - 1];
         if (!newParent) return state;
@@ -142,14 +141,36 @@ function reducer(state: TextNode[], action: padAction) {
       return newState;
     }
 
+    case "unindent": {
+      let newState = JSON.parse(JSON.stringify(state)) as TextNode[];
+      const node = findById(newState, action.id);
+      if (!node) return state;
+      // If nested
+      if (node.parent) {
+        const parent = findById(newState, node.parent) as TextNode;
+        const index = parent.children.findIndex((child) => child === node);
+        const spliceNode = parent.children.splice(index, 1)[0];
+        if (parent.parent) {
+          const parentsParent = findById(newState, parent.parent) as TextNode;
+          spliceNode.parent = parentsParent.id;
+          parentsParent.children.push(spliceNode);
+        } else {
+          spliceNode.parent = undefined;
+          const parentIndex = newState.findIndex((child) => child === parent);
+          newState.splice(parentIndex + 1, 0, spliceNode);
+        }
+      }
+
+      return newState;
+    }
+
     case "delete": {
       let newState = JSON.parse(JSON.stringify(state)) as TextNode[];
       const node = findById(newState, action.id);
       if (!node) return state;
       // If nested
       if (node.parent) {
-        const parent = findById(newState, node.parent);
-        if (!parent) return state;
+        const parent = findById(newState, node.parent) as TextNode;
         const index = parent.children.findIndex((child) => child === node);
         parent.children.splice(index, 1);
       }
@@ -222,6 +243,11 @@ const TextBlock = ({
       const newID = uuidv4();
       dispatch({ type: "addblock", id: id, newID });
       setFocus(newID);
+      return;
+    }
+
+    if (e.shiftKey && e.key === "Tab") {
+      dispatch({ type: "unindent", id: id });
       return;
     }
 
