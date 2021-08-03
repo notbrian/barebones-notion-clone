@@ -155,7 +155,9 @@ function App() {
         <p>Press enter to insert a new block</p>
         <p>Press tab to indent a block</p>
         <p>Press shift+tab to unindent a block</p>
+        <p>Use up and down arrow keys to shift focus</p>
       </div>
+
       <div id="pad">
         {padState.map((node) => {
           return (
