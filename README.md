@@ -10,6 +10,8 @@ This is a frontend application consisting of React + Typescript that is meant to
 
 It uses `react-contenteditable` to handle some of the lower level functions of `ContentEditable` 
 
+The data structure was mostly modelled after [Notions actual data model.](https://www.notion.so/blog/data-model-behind-notion) The rest was from me tinkering around on Notion in dev tools.
+
 ### Features
 
 * Create new lines by pressing `Enter`
