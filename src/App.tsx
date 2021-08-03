@@ -282,11 +282,7 @@ function App() {
                 if (parent.children.length === 1) {
                   return findNextNode(parent);
                 } else {
-                  if (nodeIndex < parent.children.length - 1) {
-                    return parent.children[nodeIndex + 1];
-                  } else {
-                    return parent;
-                  }
+                  return parent.children[nodeIndex + 1];
                 }
               } else {
                 const nodeIndex = padRef.current.findIndex(
