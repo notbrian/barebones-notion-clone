@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useReducer, useRef, useState } from "react";
 import "./App.css";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import { v4 as uuidv4 } from "uuid";
