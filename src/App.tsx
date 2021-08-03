@@ -1,4 +1,10 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import "./App.css";
 import ContentEditable, { ContentEditableEvent } from "react-contenteditable";
 import { v4 as uuidv4 } from "uuid";
@@ -23,6 +29,15 @@ function findById(data: TextNode[], id: string): TextNode | undefined {
       if (result === undefined) continue;
       return result;
     }
+  }
+}
+
+function findLowest(data: TextNode): TextNode {
+  if (data.children.length) {
+    const last = data.children[data.children.length - 1];
+    return findLowest(last);
+  } else {
+    return data;
   }
 }
 
@@ -83,7 +98,7 @@ interface padAction {
 function reducer(state: TextNode[], action: padAction) {
   switch (action.type) {
     case "edit": {
-      let newState = [...state];
+      let newState = JSON.parse(JSON.stringify(state)) as TextNode[];
       const node = findById(newState, action.id);
       if (node) {
         node.text = action.text as string;
@@ -199,9 +214,11 @@ const setCaretToEnd = (element: HTMLElement) => {
 function App() {
   const [padState, dispatch] = useReducer(reducer, defaultState);
   const [nextFocus, setFocus] = useState<string | null>(null);
+  const padRef = useRef(padState);
 
   useEffect(() => {
     console.log(padState);
+    padRef.current = padState;
   }, [padState]);
 
   useEffect(() => {
@@ -213,6 +230,95 @@ function App() {
     }
   });
 
+  const MoveUp = (id: string) => {
+    const node = findById(padRef.current, id);
+    if (!node) return;
+    // If nested
+    if (node.parent) {
+      const parent = findById(padRef.current, node.parent) as TextNode;
+      const nodeIndex = parent.children.findIndex((child) => child === node);
+      if (nodeIndex > 0) {
+        const aboveNeighbour = parent.children[nodeIndex - 1];
+        setFocus(findLowest(aboveNeighbour).id);
+      } else {
+        setFocus(parent.id);
+      }
+    } else {
+      const nodeIndex = padRef.current.findIndex((child) => child === node);
+      if (nodeIndex > 0) {
+        const aboveNeighbour = padRef.current[nodeIndex - 1];
+        setFocus(findLowest(aboveNeighbour).id);
+      }
+    }
+  };
+
+  const MoveDown = (id: string) => {
+    const node = findById(padRef.current, id);
+    if (!node) return;
+    // Go deeper down the children chain
+    if (node.children.length) {
+      setFocus(node.children[0].id);
+    }
+
+    // If theres no where else to go
+    else {
+      // If node is nested, go to its next down neighbour
+      if (node.parent) {
+        const parent = findById(padRef.current, node.parent) as TextNode;
+        const nodeIndex = parent.children.findIndex((child) => child === node);
+        if (nodeIndex < parent.children.length - 1) {
+          setFocus(parent.children[nodeIndex + 1].id);
+        }
+        // If the node is the last in its list, go to its parents next neighbour
+        else {
+          if (parent.parent) {
+            const findNextNode = (node: TextNode): TextNode => {
+              // If nested, find the parent
+              if (node.parent) {
+                const parent = findById(
+                  padRef.current,
+                  node.parent
+                ) as TextNode;
+
+                const nodeIndex = parent.children.findIndex(
+                  (child) => child === node
+                );
+
+                // If the new node is still the end of the line, find the parents parent
+                if (parent.children.length === 1) {
+                  return findNextNode(parent);
+                } else {
+                  if (nodeIndex < parent.children.length - 1) {
+                    return parent.children[nodeIndex + 1];
+                  } else {
+                    return parent;
+                  }
+                }
+              } else {
+                const nodeIndex = padRef.current.findIndex(
+                  (child) => child === node
+                );
+                if (nodeIndex < padRef.current.length - 1) {
+                  return padRef.current[nodeIndex + 1];
+                } else {
+                  return node;
+                }
+              }
+            };
+
+            setFocus(findNextNode(parent).id);
+          } else {
+            const nodeIndex = padRef.current.findIndex(
+              (child) => child === parent
+            );
+            if (nodeIndex < padRef.current.length - 1) {
+              setFocus(padRef.current[nodeIndex + 1].id);
+            }
+          }
+        }
+      }
+    }
+  };
   return (
     <div className="App">
       <div id="pad">
@@ -223,6 +329,8 @@ function App() {
               key={node.id}
               dispatch={dispatch}
               setFocus={setFocus}
+              MoveUp={MoveUp}
+              MoveDown={MoveDown}
             />
           );
         })}
@@ -235,10 +343,14 @@ const TextBlock = ({
   data,
   dispatch,
   setFocus,
+  MoveUp,
+  MoveDown,
 }: {
   data: TextNode;
   dispatch: React.Dispatch<padAction>;
   setFocus: (id: string) => void;
+  MoveUp: (id: string) => void;
+  MoveDown: (id: string) => void;
 }) => {
   const { children, text, id } = data;
 
@@ -270,19 +382,20 @@ const TextBlock = ({
       dispatch({ type: "indent", id: id, newID: uuidv4() });
       return;
     }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      MoveUp(id);
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      MoveDown(id);
+    }
   };
 
-  const ResolveChildren = () => {
-    return children.map((node) => {
-      return (
-        <TextBlock
-          data={node}
-          key={node.id}
-          dispatch={dispatch}
-          setFocus={setFocus}
-        />
-      );
-    });
+  const handleFocus = () => {
+    setFocus(id);
   };
 
   return (
@@ -294,9 +407,21 @@ const TextBlock = ({
           onChange={handleChange}
           className="text-block"
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
           id={id}
         />
-        {ResolveChildren()}
+        {children.map((node) => {
+          return (
+            <TextBlock
+              data={node}
+              key={node.id}
+              dispatch={dispatch}
+              setFocus={setFocus}
+              MoveUp={MoveUp}
+              MoveDown={MoveDown}
+            />
+          );
+        })}
       </div>
     </div>
   );
