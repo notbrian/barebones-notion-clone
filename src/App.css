@@ -2,8 +2,9 @@
   text-align: center;
   display: flex;
   align-items: center;
-  justify-content: center;
   height: 100vh;
+  margin-top: 3vh;
+  flex-direction: column;
 }
 
 .text-block {
@@ -39,4 +40,11 @@
 
 .bullet::before {
   content: "•";
+}
+
+#instructions-wrapper {
+  display: flex;
+  justify-content: space-between;
+  width: 50%;
+  margin-bottom: 5vh;
 }

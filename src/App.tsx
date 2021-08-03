@@ -150,6 +150,12 @@ function App() {
   };
   return (
     <div className="App">
+      <div id="instructions-wrapper">
+        <p>Select and type to edit text</p>
+        <p>Press enter to insert a new block</p>
+        <p>Press tab to indent a block</p>
+        <p>Press shift+tab to unindent a block</p>
+      </div>
       <div id="pad">
         {padState.map((node) => {
           return (
