@@ -1,9 +1,27 @@
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import React from "react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import App from "./App";
 
-test('renders learn react link', () => {
+afterEach(cleanup);
+test("renders app without errors", () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+});
+
+test("renders top level elements", () => {
+  render(<App />);
+  const node = screen.getByText(/editable 3/i);
+  expect(node).toBeInTheDocument();
+});
+
+test("renders nested elements", () => {
+  render(<App />);
+  const node = screen.getByText(/Child 2/i);
+  expect(node).toBeInTheDocument();
+});
+
+test("creates a new block on enter", () => {
+  render(<App />);
+  const node = screen.getByText(/Child 2/i);
+  fireEvent.keyDown(node, { key: "Enter" });
+  const newNode = screen.getByText(/New Text/i);
 });
