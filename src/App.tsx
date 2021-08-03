@@ -52,7 +52,7 @@ const defaultState = [
 function App() {
   const [padState, dispatch] = useReducer(reducer, defaultState);
   const [nextFocus, setFocus] = useState<string | null>(null);
-  // Ref of padState to fix stale statea issues
+  // Ref of padState to fix stale state issues
   const padRef = useRef(padState);
 
   useEffect(() => {
