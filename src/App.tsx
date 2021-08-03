@@ -310,6 +310,11 @@ function App() {
             }
           }
         }
+      } else {
+        const nodeIndex = padRef.current.findIndex((child) => child === node);
+        if (nodeIndex < padRef.current.length - 1) {
+          setFocus(padRef.current[nodeIndex + 1].id);
+        }
       }
     }
   };
