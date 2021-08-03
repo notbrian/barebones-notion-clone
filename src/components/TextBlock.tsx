@@ -48,9 +48,8 @@ const TextBlock = ({
     // Intents this block on tab
     if (e.key === "Tab") {
       e.preventDefault();
-      const newID = uuidv4();
-      dispatch({ type: "indent", id: id, newID });
-      setFocus(newID);
+      dispatch({ type: "indent", id: id });
+      setFocus(id);
       return;
     }
 
@@ -67,7 +66,7 @@ const TextBlock = ({
   };
 
   // On select, change the focus state to this block
-  const handleFocus = () => {
+  const handleSelect = () => {
     setFocus(id);
   };
 
@@ -80,7 +79,7 @@ const TextBlock = ({
           onChange={handleChange}
           className="text-block"
           onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
+          onSelect={handleSelect}
           id={id}
         />
         {/* Render nested blocks */}
